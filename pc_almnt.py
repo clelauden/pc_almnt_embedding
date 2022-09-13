@@ -4,7 +4,7 @@
 # Chargement des Modules
 import numpy as np
 
-def AjoutColonneLigne(matrice):
+def Ajoutcolonneligne(matrice):
 # Ajout de la ligne vide et la colonne vide en tête à la matrice de dot product
      addrow = np.zeros((1, matrice.shape[1]))
      matrice_1 = np.concatenate((addrow,matrice),axis = 0)
@@ -14,12 +14,10 @@ def AjoutColonneLigne(matrice):
 
 def matrix_sw(seq1, seq2, siml, gap=0):
 # Production la matrice de score avec la méthode de Smith-Waterman
-    sim = AjoutColonneLigne(siml)
-    seq1.insert(0, '')
-    seq2.insert(0, '')
+    sim = Ajoutcolonneligne(siml)
     H = np.zeros((len(seq1), len(seq2)))
-    for i in range(1,len(seq1)):
-        for j in range (1,len(seq2)):
+    for i in range(1,len(seq1)-1):
+        for j in range (1,len(seq2)-1):
             asso = H[i-1, j-1] + (sim[i,j] if seq1[i-1] == seq2[j-1] else - abs(siml[i,j]))
             dele = H[i-1,j] - gap
             inse = H[i, j-1] - gap
@@ -28,9 +26,7 @@ def matrix_sw(seq1, seq2, siml, gap=0):
 
 def matrix_nw(seq1nw, seq2nw, simlnw, gapnw=0):
 # Production la matrice de score avec la méthode de Needleman-Wunsch
-    simnw = AjoutColonneLigne(simlnw)
-    seq1nw.insert(0, '')
-    seq2nw.insert(0, '')
+    simnw = Ajoutcolonneligne(simlnw)
     Hnw = np.zeros((len(seq1nw), len(seq2nw)))
     for i in range(1,len(seq1nw)):
         for j in range (1,len(seq2nw)):
@@ -43,8 +39,6 @@ def matrix_nw(seq1nw, seq2nw, simlnw, gapnw=0):
 
 def backtrak_sw(seq1mn, seq2mn, M):
 # Réalisation du backtracking et de l'alignement avec la méthode de Smith-Waterman
-    seq1mn.insert(0, '')
-    seq2mn.insert(0, '')
     coord = np.max(M)
     c , d = np.where(M==coord)
     i = np.max(c)
@@ -84,8 +78,6 @@ def backtrak_sw(seq1mn, seq2mn, M):
 
 def backtrak_nw(seq1mn, seq2mn, M):
 # Réalisation du backtracking et de l'alignement avec la méthode de Needlman-Wunsch
-    seq1mn.insert(0, '')
-    seq2mn.insert(0, '')
     i = 0
     j = 0
     al1 = ''
@@ -122,8 +114,6 @@ def backtrak_nw(seq1mn, seq2mn, M):
 
 def backtrak_sg(seq1mn, seq2mn, M):
 # Réalisation du backtracking et de l'alignement avec la méthode de Semi-global
-    seq1mn.insert(0, '')
-    seq2mn.insert(0, '')
     coord = np.max(M[:,len(seq2mn)-1])
     c , d = np.where(M==coord)
     i = np.max(c)
@@ -174,38 +164,47 @@ def alignement (prot1, prot2, dotp):
     return bt
 
 def result_file(prot1, prot2, dotp):
-# Création du fichier de sortie avec les alignements
+# Création du fichier de sortie avec les alignements, en inversant les alignement pour 
     almt1 , almt2 = alignement (prot1, prot2, dotp)
-    almt1_rev = almt1[::-1]
-    almt2_rev = almt2[::-1]
+    if input_alignement == 'SW' or 'SG':
+        almt1 = almt1[::-1]
+        almt2 = almt2[::-1]
+    else :
+        almt1 = almt1
+        almt2 = almt2
     new_file = open('alignement.txt', 'w')
-    new_file.write(almt1_rev)
+    new_file.write(almt1)
     new_file.write("\n")
-    new_file.write(almt2_rev)
+    new_file.write(almt2)
     new_file.close()
     print('File created')
     return
 
 
 # Input des séquences protéiques et des embedding
-input_emb1 = input ('Enter the name of the file with the 1st embedding:')
-input_emb2 = input ('Enter the name of the file with the 2nd embedding:')
-input_prot1 = input ('Enter the name of the file with the 1nd protein:')
-input_prot2 = input ('Enter the name of the file with the 2nd protein:')
+#input_emb1 = input ('Enter the name of the file with the 1st embedding:')
+#input_emb2 = input ('Enter the name of the file with the 2nd embedding:')
+#input_prot1 = input ('Enter the name of the file with the 1nd protein:')
+#input_prot2 = input ('Enter the name of the file with the 2nd protein:')
 
 # Input du type d'alignment
 input_alignement = input ('Alignment method (SW, NW or SG):')
 
+#6PF2K_1bif.t5emb
+#SKI_1shka.t5emb
+#6PF2K_1BIF.fasta
+#SKI_1SHKA.fasta
+
 #Lire des fichier d'embedding
-emb1=np.loadtxt(input_emb1)
-emb2=np.loadtxt(input_emb2)
+emb1=np.loadtxt('6PF2K_1bif.t5emb')
+emb2=np.loadtxt('SKI_1shka.t5emb')
 
 # Lecture et mise en forme de séquences de protéines
-with open(input_prot1) as f:
+with open('6PF2K_1BIF.fasta') as f:
     pr1 = f.readlines()
     pro1 = pr1[1:]
 
-with open(input_prot2) as f:
+with open('SKI_1SHKA.fasta') as f:
     pr2 = f.readlines()
     pro2 = pr2[1:]
 
@@ -214,6 +213,8 @@ listAA1 = ''.join(pro1)
 prot1 = list(listAA1)
 listAA2 = ''.join(pro2)
 prot2 = list(listAA2)
+prot1.insert(0,' ')
+prot2.insert(0,' ')
 
 # Calcul du dot product entre les 2 matrices d'embedding
 # On commence par retourner la 2ème matrice
